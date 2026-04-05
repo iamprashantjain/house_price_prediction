@@ -1,0 +1,11 @@
+- create a project folder 
+- git init
+- dvc init
+- requirements
+- create venv and install requirements: pip install -r requirements.txt
+- create github repo and add remote: git remote add origin <.git url>
+- run template.py to create folder and files
+- git push
+- perform eperiment to find out best strategy, model & hyperparameters (track with mlflow) to convert into dvc pipeline
+- create dvc pipeline
+- create CICD pipeline on github
