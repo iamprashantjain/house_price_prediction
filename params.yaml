@@ -1,0 +1,4 @@
+data:
+  flats_path: "data/flats.csv"
+  houses_path: "data/houses.csv"
+  merged_path: "data/raw.csv"

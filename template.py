@@ -19,8 +19,11 @@ list_of_files = [
     "src/components/model_evaluation.py",  # Model evaluation script
         
     # Utilities for common functions
+    "src/utils/__init__.py",
     "src/utils/utils.py",                   # Utilities script
+    "src/logger/__init__.py",
     "src/logger/logging.py",                # Logger for application logging
+    "src/exception/__init__.py",
     "src/exception/exception.py",           # Custom exception handling
 
     # Configuration and setup files

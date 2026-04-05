@@ -1,0 +1,28 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data_ingestion.py
+    deps:
+    - path: data/flats.csv
+      hash: md5
+      md5: 58667e39ad1d58d66e77637009404d62
+      size: 5726836
+    - path: data/houses.csv
+      hash: md5
+      md5: 4681f7c5c507e4195eeba43676843863
+      size: 2000313
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: 73cb4f796d40da892d4fb37a10a6bb65
+      size: 3090
+    params:
+      params.yaml:
+        data:
+          flats_path: data/flats.csv
+          houses_path: data/houses.csv
+          merged_path: data/raw.csv
+    outs:
+    - path: data/raw.csv
+      hash: md5
+      md5: ad25a070a9d05a87f0f634bdf1c7b58b
+      size: 7756444
