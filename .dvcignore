@@ -3,3 +3,23 @@
 # https://dvc.org/doc/user-guide/dvcignore
 logs/
 venv/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+
+# Cache
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
