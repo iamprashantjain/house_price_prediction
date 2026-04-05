@@ -8,9 +8,15 @@
 - create setup.py and pip install -e .
 - setup s3 buket
 - dvc remote add -d myremote s3://my-mlops-project-demo/house_price_prediction
+- setup dagshub and host mlflow
 
 - perform experiment to find out best strategy to cleaning, transformation, model building & hyperparameters (track with mlflow) to convert into dvc pipeline
 
 - convert best strategies into dvc pipeline
 - create components like data_ingestion, data_transformation, model_trainer, model_evalutaion, logger etc
-- create CICD pipeline on github
+- upload best model on dagshub hosted mlflow model_registry
+- create fastapi (fetch latest model and make prediction)
+- dockerize this app (dockerfile)
+- create and run CI/CD pipeline on github actions and save dockerized app on ECR
+- deploy dokerized app from ECR to ECS
+- model retraining CT pipeline (manual, scheduled, event driven like new data/model drift)
