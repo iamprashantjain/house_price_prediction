@@ -13,16 +13,18 @@ stages:
       size: 2000313
     - path: src/data_ingestion.py
       hash: md5
-      md5: 73cb4f796d40da892d4fb37a10a6bb65
-      size: 3090
-    params:
-      params.yaml:
-        data:
-          flats_path: data/flats.csv
-          houses_path: data/houses.csv
-          merged_path: data/raw.csv
+      md5: 3d8301d81978bfd5c98b25663ed34937
+      size: 4984
     outs:
     - path: data/raw.csv
       hash: md5
       md5: ad25a070a9d05a87f0f634bdf1c7b58b
       size: 7756444
+    - path: data/test.csv
+      hash: md5
+      md5: a23e14eb452c491e339eb933127d5c28
+      size: 1576000
+    - path: data/train.csv
+      hash: md5
+      md5: 51891cc54864d141a10f4eaf50721f00
+      size: 6180674

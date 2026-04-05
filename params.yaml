@@ -1,4 +1,11 @@
 data:
-  flats_path: "data/flats.csv"
-  houses_path: "data/houses.csv"
-  merged_path: "data/raw.csv"
+  raw_data_paths:
+    flats: "data/flats.csv"
+    houses: "data/houses.csv"
+  merged_data_path: "data/raw.csv"
+  train_data_path: "data/train.csv"
+  test_data_path: "data/test.csv"
+
+data_split:
+  test_size: 0.2
+  random_state: 42

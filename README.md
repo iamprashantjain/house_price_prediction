@@ -6,8 +6,8 @@
 - create github repo and add remote: git remote add origin <.git url>
 - run template.py to create folder and files
 - create setup.py and pip install -e .
-- setup s3 buket (sigin --> s3 --> )
-- dvc remote add -d myremote s3://my-bucket/dvc-store
+- setup s3 buket
+- dvc remote add -d myremote s3://my-mlops-project-demo/house_price_prediction
 
 - perform experiment to find out best strategy to cleaning, transformation, model building & hyperparameters (track with mlflow) to convert into dvc pipeline
 

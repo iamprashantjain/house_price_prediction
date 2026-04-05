@@ -1,3 +1,4 @@
+# dvc.yaml
 stages:
   data_ingestion:
     cmd: python src/data_ingestion.py
@@ -7,5 +8,5 @@ stages:
       - data/houses.csv
     outs:
       - data/raw.csv
-    params:
-      - data
+      - data/train.csv
+      - data/test.csv
