@@ -13,18 +13,227 @@ stages:
       size: 2000313
     - path: src/data_ingestion.py
       hash: md5
-      md5: 3d8301d81978bfd5c98b25663ed34937
-      size: 4984
+      md5: 9cc2b75947406c0ae528688703df7201
+      size: 3055
+    params:
+      params.yaml:
+        data.merged_data_path: data/raw.csv
+        data.raw_data_paths.flats: data/flats.csv
+        data.raw_data_paths.houses: data/houses.csv
     outs:
     - path: data/raw.csv
       hash: md5
       md5: ad25a070a9d05a87f0f634bdf1c7b58b
       size: 7756444
+  data_cleaning:
+    cmd: python src/data_cleaning.py
+    deps:
+    - path: data/raw.csv
+      hash: md5
+      md5: ad25a070a9d05a87f0f634bdf1c7b58b
+      size: 7756444
+    - path: src/data_cleaning.py
+      hash: md5
+      md5: 3eea04489afd6958038132c37c0c87aa
+      size: 7617
+    params:
+      params.yaml:
+        cleaning.drop_columns:
+        - property_name
+        - link
+        - property_id
+        - rate
+        - calculated_rate
+        - areaWithType
+        - description
+        - features
+        - furnishDetails
+        - bedRoom
+        - bathroom
+        - balcony
+        - additionalRoom
+        - address
+        - floorNum
+        - noOfFloor
+        cleaning.fillna_strategy: mode
+        cleaning.rating_columns:
+        - safety_rating
+        - lifestyle_rating
+        - green_area_rating
+        - amenities_rating
+        data.cleaned_data_path: data/cleaned.csv
+    outs:
+    - path: data/cleaned.csv
+      hash: md5
+      md5: 80d9d6cddd9896d972de1a93ace6b365
+      size: 2552892
+  data_transformation:
+    cmd: python src/data_transformation.py
+    deps:
+    - path: data/cleaned.csv
+      hash: md5
+      md5: 80d9d6cddd9896d972de1a93ace6b365
+      size: 2552892
+    - path: src/data_transformation.py
+      hash: md5
+      md5: f6eb207202bba696c78170d336c7c3bc
+      size: 7960
+    params:
+      params.yaml:
+        data.processed_data_path: data/processed/
+        data.test_data_path: data/test.csv
+        data.train_data_path: data/train.csv
+        data_split.random_state: 42
+        data_split.test_size: 0.2
+        feature_engineering.age_mapping:
+          Under Construction: 0
+          0 to 1 Year Old: 1
+          1 to 5 Year Old: 3
+          5 to 10 Year Old: 7.5
+          10+ Year Old: 15
+        feature_engineering.default_age_years: 5
+        feature_engineering.default_facing_code: 0
+        feature_engineering.facing_mapping:
+          North: 1
+          North-East: 2
+          East: 3
+          South-East: 4
+          South: 5
+          South-West: 6
+          West: 7
+          North-West: 8
+        features.selected_features:
+        - area_sqft
+        - bedroom_num
+        - bathroom_num
+        - balcony_num
+        - property_type_code
+        - facing_code
+        - age_years
+        - price_per_sqft
+        - total_rooms
+        - room_bath_ratio
+        features.target_column: price
+    outs:
+    - path: data/processed/
+      hash: md5
+      md5: e76a1c70fe97c5e51daa1e43dd2b4431.dir
+      size: 348464
+      nfiles: 4
     - path: data/test.csv
       hash: md5
-      md5: a23e14eb452c491e339eb933127d5c28
-      size: 1576000
+      md5: 39a190f444df9de96971d0fbd0786343
+      size: 55718
     - path: data/train.csv
       hash: md5
-      md5: 51891cc54864d141a10f4eaf50721f00
-      size: 6180674
+      md5: 13db7421068bbe07bae43cf74c09832e
+      size: 222020
+  model_building:
+    cmd: python src/model_building.py
+    deps:
+    - path: data/processed/
+      hash: md5
+      md5: e76a1c70fe97c5e51daa1e43dd2b4431.dir
+      size: 348464
+      nfiles: 4
+    - path: params.yaml
+      hash: md5
+      md5: 7e2d4e7ea4476a28b8b1c49b760b221f
+      size: 2448
+    - path: src/model_building.py
+      hash: md5
+      md5: c008b85bb8d1b4bba1df11528158e30f
+      size: 6638
+    params:
+      params.yaml:
+        model.params:
+          n_estimators: 200
+          max_depth: 20
+          min_samples_split: 5
+          min_samples_leaf: 2
+          random_state: 42
+          n_jobs: -1
+        model.save_path: models/model.pkl
+        model.type: RandomForestRegressor
+    outs:
+    - path: models/metadata.yaml
+      hash: md5
+      md5: 4af02cf66ce646029c73e970b0fc51b7
+      size: 424
+    - path: models/model.pkl
+      hash: md5
+      md5: e6e08126b70eb2ac18b0c299ae70fd12
+      size: 20081713
+  model_evaluation:
+    cmd: python src/model_evaluation.py
+    deps:
+    - path: data/processed/X_test.npy
+      hash: md5
+      md5: 132e89f9e2e8c78edbba3f9bcd7e1a77
+      size: 63408
+    - path: data/processed/y_test.npy
+      hash: md5
+      md5: afb3082406dd9f043c5f1d0f5cd975f6
+      size: 6456
+    - path: models/model.pkl
+      hash: md5
+      md5: e6e08126b70eb2ac18b0c299ae70fd12
+      size: 20081713
+    - path: params.yaml
+      hash: md5
+      md5: 7e2d4e7ea4476a28b8b1c49b760b221f
+      size: 2448
+    - path: src/model_evaluation.py
+      hash: md5
+      md5: ca4a8e56f0961627c4199523989cf543
+      size: 5959
+    params:
+      params.yaml:
+        mlflow.experiment_name: evaluation
+        mlflow.tracking_uri: 
+          https://dagshub.com/iamprashantjain/house_price_prediction.mlflow
+        model_evaluation.evaluation_threshold: 0.7
+        model_evaluation.metrics_save_path: reports/metrics.json
+        model_evaluation.predictions_save_path: reports/predictions.csv
+    outs:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: ffe8166a3456bfbfdc69107d99bd23ee
+      size: 82
+    - path: reports/feature_importance.csv
+      hash: md5
+      md5: 3e07411593dc996a46ff5d6251b32e3e
+      size: 270
+    - path: reports/metrics.json
+      hash: md5
+      md5: 33145bbb2baf4d62bc75b5b73b372fb6
+      size: 177
+    - path: reports/predictions.csv
+      hash: md5
+      md5: 57801f3bfb7aacfd01a2e5c0ce159509
+      size: 35396
+  model_registry:
+    cmd: python src/register_model.py
+    deps:
+    - path: params.yaml
+      hash: md5
+      md5: 7e2d4e7ea4476a28b8b1c49b760b221f
+      size: 2448
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: ffe8166a3456bfbfdc69107d99bd23ee
+      size: 82
+    - path: src/register_model.py
+      hash: md5
+      md5: 9f9a3ed0153f6e1c7e2b70d94e4b63d1
+      size: 4750
+    params:
+      params.yaml:
+        mlflow.model_name: house_price_model
+        mlflow.tracking_uri: 
+          https://dagshub.com/iamprashantjain/house_price_prediction.mlflow
+    outs:
+    - path: reports/registry_info.json
+      hash: md5
+      md5: d9e8c2678682113c85c738e445a234df
+      size: 140

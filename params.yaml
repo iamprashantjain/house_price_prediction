@@ -1,11 +1,111 @@
+# Data paths
 data:
   raw_data_paths:
     flats: "data/flats.csv"
     houses: "data/houses.csv"
   merged_data_path: "data/raw.csv"
+  cleaned_data_path: "data/cleaned.csv"
   train_data_path: "data/train.csv"
   test_data_path: "data/test.csv"
+  processed_data_path: "data/processed/"
+
 
 data_split:
   test_size: 0.2
   random_state: 42
+  shuffle: true
+
+# Data cleaning parameters
+cleaning:
+  drop_columns:
+    - "property_name"
+    - "link"
+    - "property_id"
+    - "rate"
+    - "calculated_rate"
+    - "areaWithType"
+    - "description"
+    - "features"
+    - "furnishDetails"
+    - "bedRoom"
+    - "bathroom"
+    - "balcony"
+    - "additionalRoom"
+    - "address"
+    - "floorNum"
+    - "noOfFloor"
+  rating_columns:
+    - "safety_rating"
+    - "lifestyle_rating"
+    - "green_area_rating"
+    - "amenities_rating"
+  fillna_strategy: "mode"  # or "median", "mean"
+
+# Feature engineering parameters
+feature_engineering:
+  age_mapping:
+    "Under Construction": 0
+    "0 to 1 Year Old": 1
+    "1 to 5 Year Old": 3
+    "5 to 10 Year Old": 7.5
+    "10+ Year Old": 15
+  facing_mapping:
+    "North": 1
+    "North-East": 2
+    "East": 3
+    "South-East": 4
+    "South": 5
+    "South-West": 6
+    "West": 7
+    "North-West": 8
+  default_age_years: 5
+  default_facing_code: 0
+
+# Features for model training
+features:
+  selected_features:
+    - "area_sqft"
+    - "bedroom_num"
+    - "bathroom_num"
+    - "balcony_num"
+    - "property_type_code"
+    - "facing_code"
+    - "age_years"
+    - "price_per_sqft"
+    - "total_rooms"
+    - "room_bath_ratio"
+  target_column: "price"
+
+# Model training parameters
+model:
+  type: "RandomForestRegressor"
+  params:
+    n_estimators: 200
+    max_depth: 20
+    min_samples_split: 5
+    min_samples_leaf: 2
+    random_state: 42
+    n_jobs: -1
+  save_path: "models/model.pkl"
+
+# MLflow tracking
+mlflow:
+  tracking_uri: "https://dagshub.com/iamprashantjain/house_price_prediction.mlflow"
+  experiment_name: "evaluation"
+  registered_model_name: "house_price_model"
+  model_name: "house_price_model"
+
+
+model_evaluation:
+  metrics_save_path: "reports/metrics.json"
+  predictions_save_path: "reports/predictions.csv"
+  evaluation_threshold: 0.7
+  model_info_path: "reports/experiment_info.json"
+
+
+model_registry:
+  model_name: "house_price_model"
+  stage: "Staging"
+  registry_info_path: "reports/registry_info.json"
+
+

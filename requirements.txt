@@ -7,3 +7,6 @@ xgboost
 pyyaml
 ipykernel
 dvc[s3]
+plotly
+mlflow==2.15.0
+dagshub

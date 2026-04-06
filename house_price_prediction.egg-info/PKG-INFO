@@ -1,20 +1,13 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: house-price-prediction
 Version: 0.0.1
-Summary: 99 Acres Property Price Prediction
+Summary: House Price Prediction
+Home-page: UNKNOWN
 Author: Prashant Jain
 Author-email: p@p.com
+License: UNKNOWN
+Platform: UNKNOWN
 Requires-Python: >=3.8
-Requires-Dist: pandas
-Requires-Dist: numpy
-Requires-Dist: matplotlib
-Requires-Dist: seaborn
-Requires-Dist: scikit-learn
-Requires-Dist: xgboost
-Requires-Dist: pyyaml
-Requires-Dist: ipykernel
-Dynamic: author
-Dynamic: author-email
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
+
+UNKNOWN
+
