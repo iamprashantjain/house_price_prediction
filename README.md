@@ -8,6 +8,7 @@
 - create setup.py and pip install -e .
 - setup s3 buket
 - dvc remote add -d myremote s3://my-mlops-project-demo/house_price_prediction
+- dvc config core.autostage true ---> auto pull everytime    
 - setup dagshub and host mlflow
 - perform experiments assesment, cleaning, EDA, transformation ---> EDA round2 ---> transformation, model building & hyperparameters (track with mlflow) in 4 phases: basic, features, algorithm, hyperparameter tuning
 - convert best overall into dvc pipeline: create components like data_ingestion, data_transformation, model_trainer, model_evalutaion, logger etc
@@ -17,6 +18,8 @@
 
 - create CI/CD pipeline using github actions and docker
     - CI (continuous integration) is a software development practice where developers regularly update the code with new changes and merge thier code changes into github or any other shared centralized repository usually multiple times a day. each merge triggers automation build and testing to detect and fix any issues. This helps to ensure that software remains in deployable stage everytime. 
+
+    ![alt text](image.png)
 
     - STEPS:
         + create a folder .github/workflows/ci.yaml

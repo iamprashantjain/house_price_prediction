@@ -1,4 +1,5 @@
 [core]
     remote = myremote
+    autostage = true
 ['remote "myremote"']
     url = s3://my-mlops-project-demo/house_price_prediction
