@@ -214,7 +214,7 @@ jobs:
         run: |
           export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
           export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
-          dvc pull --run-cache
+          dvc pull --force
 
       # ------------------------
       # 8️⃣ Run DVC pipeline (all stages)
