@@ -198,7 +198,7 @@ stages:
     outs:
     - path: reports/experiment_info.json
       hash: md5
-      md5: 0f75e1d0ce7364e3a2a54631598e6eb4
+      md5: a896ec80f9cf4650560f0e56234fd48c
       size: 82
     - path: reports/feature_importance.csv
       hash: md5
@@ -206,12 +206,12 @@ stages:
       size: 269
     - path: reports/metrics.json
       hash: md5
-      md5: 10a8243c59082e0fa88ee7c31b93196b
-      size: 177
+      md5: 32a149063da35e026d9dbf8fcb276405
+      size: 176
     - path: reports/predictions.csv
       hash: md5
-      md5: bd90ea345777c0d59395cecdc7b05cc3
-      size: 44269
+      md5: 61bad3d28dc962beea218146f28f4ec7
+      size: 44282
   model_registry:
     cmd: python src/register_model.py
     deps:
@@ -221,7 +221,7 @@ stages:
       size: 2443
     - path: reports/experiment_info.json
       hash: md5
-      md5: 0f75e1d0ce7364e3a2a54631598e6eb4
+      md5: a896ec80f9cf4650560f0e56234fd48c
       size: 82
     - path: src/register_model.py
       hash: md5
@@ -235,5 +235,5 @@ stages:
     outs:
     - path: reports/registry_info.json
       hash: md5
-      md5: 9646053e875002014bb122669824fc0c
+      md5: 7d989c0eb1f828706afcb56bb5565a85
       size: 140
