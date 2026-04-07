@@ -47,7 +47,12 @@ jobs:
           dvc remote modify myremote region ${{ secrets.AWS_REGION }}
 
       - name: Pull data from S3
-        run: dvc pull
+        run: |
+          dvc pull
+          dvc pull data/flats.csv.dvc
+          dvc pull data/houses.csv.dvc
+          dvc checkout data/
+          ls -la data/
 
       - name: Run DVC pipeline
         env:
