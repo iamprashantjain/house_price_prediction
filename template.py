@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # List of files and directories to create
 list_of_files = [
     ".github/workflows/.gitkeep",          # GitHub Actions workflows directory
+    ".github/workflows/ci.yaml",
     "experiment/experiments.ipynb",        # Jupyter Notebook for experimentation
     "src/__init__.py",                      # Init file for the src package
     
@@ -28,6 +29,16 @@ list_of_files = [
 
     # Configuration and setup files
     "setup.py",                             # Setup script for installation
+    
+    ".gitignore",
+    ".dvcignore",
+    ".env",
+    "README.md",
+    "requirements.txt",
+    
+    "app/main.py",
+    "app/test_api.py",
+    
 ]
 
 # Create directories and files

@@ -15,10 +15,16 @@
 - perform model test & if success then push model to production
 - create fastapi (fetch latest model in production from mlflow model_registry and make predictions)
 
+- create CI/CD pipeline using github actions and docker
+    - CI (continuous integration) is a software development practice where developers regularly update the code with new changes and merge thier code changes into github or any other shared centralized repository usually multiple times a day. each merge triggers automation build and testing to detect and fix any issues. This helps to ensure that software remains in deployable stage everytime. 
 
-- test fast api in CI
-- dockerize this app (dockerfile)
-- create and run CI/CD pipeline on github actions and save dockerized app on ECR
-- deploy dokerized app from ECR to ECS
+    - STEPS:
+        + create a folder .github/workflows/ci.yaml
+            - name, on, jobs (name, runs on, steps)
+        + test fast api in CI
+        + dockerize this app (dockerfile)
+        + create and run CI/CD pipeline on github actions with triggers and save dockerized app on ECR
+        + deploy dokerized app from ECR to ECS 
+
 
 - model retraining CT pipeline using airflow (manual, scheduled, event driven like new data/model_performance_drift etc) using evidently ai
