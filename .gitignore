@@ -26,16 +26,13 @@ ENV/
 logs/
 *.log
 
-# DVC cache
-.dvc/cache/
-
 # OS
 .DS_Store
 Thumbs.db
 
 logs/
 venv/
-*.csv
+
 
 
 # Byte-compiled / optimized / DLL files
@@ -114,9 +111,6 @@ target/
 
 # Jupyter NB Checkpoints
 .ipynb_checkpoints/
-
-# exclude data from source control by default
-/data/
 
 # Mac OS-specific storage files
 .DS_Store
