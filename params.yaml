@@ -11,7 +11,7 @@ data:
 
 
 data_split:
-  test_size: 0.25
+  test_size: 0.30
   random_state: 42
   shuffle: true
 
@@ -107,5 +107,3 @@ model_registry:
   model_name: "house_price_model"
   stage: "Staging"
   registry_info_path: "reports/registry_info.json"
-
-
