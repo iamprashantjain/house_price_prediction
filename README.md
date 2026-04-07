@@ -30,6 +30,10 @@
             - S3_BUCKET_NAME
             - DAGSHUB_PAT
 
+        + This step will take a lot of your time.. lol
+
+
+
         + test fast api in CI
         + dockerize this app (dockerfile)
         + create and run CI/CD pipeline on github actions with triggers and push dockerized app on ECR
