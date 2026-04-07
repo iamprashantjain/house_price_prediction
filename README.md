@@ -31,9 +31,7 @@
             - DAGSHUB_PAT
 
         + This step will take a lot of your time.. lol
-
-
-
+        
         + test fast api in CI
         + dockerize this app (dockerfile)
         + create and run CI/CD pipeline on github actions with triggers and push dockerized app on ECR
@@ -41,3 +39,6 @@
 
 
 - model retraining CT pipeline using airflow (manual, scheduled, event driven like new data/model_performance_drift etc) using evidently ai
+
+
+- git add . && git commit -m "fastapi app test added with fastapi server in background" && git push origin main
