@@ -48,11 +48,18 @@ jobs:
 
       - name: Pull data and run pipeline
         run: |
-          # Direct S3 download with hardcoded bucket
-          aws s3 cp s3://my-mlops-project-demo/house_price_prediction/data/flats.csv data/flats.csv
-          aws s3 cp s3://my-mlops-project-demo/house_price_prediction/data/houses.csv data/houses.csv
-          
+          # DVC fetch se hi kaam le
+          dvc fetch --all-commits
+          dvc checkout
           ls -la data/
+          
+          # Agar file nahi aayi toh DVC status dekh
+          if [ ! -f data/flats.csv ]; then
+            echo "flats.csv missing, checking DVC status..."
+            dvc status data/flats.csv.dvc
+            dvc pull data/flats.csv.dvc --force
+          fi
+          
           dvc repro
 
       - name: Run DVC pipeline
