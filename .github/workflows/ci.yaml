@@ -1,79 +1,79 @@
-name: CI Pipeline
+# name: CI Pipeline
 
-on: 
-  push:
-    branches: [main]
-  workflow_dispatch:
+# on: 
+#   push:
+#     branches: [main]
+#   workflow_dispatch:
 
-jobs:
-  project-testing:
-    runs-on: ubuntu-latest
+# jobs:
+#   project-testing:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          lfs: true
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#         with:
+#           lfs: true
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
+#       - name: Setup Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: '3.10'
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+#       - name: Cache pip dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: ~/.cache/pip
+#           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+#           restore-keys: |
+#             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install dvc dvc-s3
+#       - name: Install dependencies
+#         run: |
+#           pip install --upgrade pip
+#           pip install -r requirements.txt
+#           pip install dvc dvc-s3
 
-      - name: Configure AWS credentials for DVC (S3)
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+#       - name: Configure AWS credentials for DVC (S3)
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Configure DVC remote for S3
-        run: |
-          dvc remote add -f -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
-          dvc remote modify myremote region ${{ secrets.AWS_REGION }}
+#       - name: Configure DVC remote for S3
+#         run: |
+#           dvc remote add -f -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
+#           dvc remote modify myremote region ${{ secrets.AWS_REGION }}
 
-      - name: Pull data and run pipeline
-        run: |
-          dvc pull --run-cache
+#       - name: Pull data and run pipeline
+#         run: |
+#           dvc pull --run-cache
           
 
-      - name: Run DVC pipeline
-        env:
-          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          dvc repro
+#       - name: Run DVC pipeline
+#         env:
+#           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+#         run: |
+#           dvc repro
 
-      - name: Push DVC changes to S3
-        if: success()
-        run: |
-          dvc push
+#       - name: Push DVC changes to S3
+#         if: success()
+#         run: |
+#           dvc push
 
-      - name: Run model tests
-        env:
-          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          python -m unittest tests/test_model.py -v
+#       - name: Run model tests
+#         env:
+#           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+#         run: |
+#           python -m unittest tests/test_model.py -v
 
-      - name: Promote model to production
-        if: success()
-        env:
-          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: |
-          python src/promote_model.py
+#       - name: Promote model to production
+#         if: success()
+#         env:
+#           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+#         run: |
+#           python src/promote_model.py
 
 
 
@@ -137,3 +137,122 @@ jobs:
 
 
       
+
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mlops-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ------------------------
+      # 1️⃣ Checkout code
+      # ------------------------
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      # ------------------------
+      # 2️⃣ Setup Python
+      # ------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      # ------------------------
+      # 3️⃣ Cache pip dependencies
+      # ------------------------
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ------------------------
+      # 4️⃣ Install dependencies
+      # ------------------------
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install dvc[s3]
+
+      # ------------------------
+      # 5️⃣ Configure AWS for DVC S3
+      # ------------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ------------------------
+      # 6️⃣ Configure DVC remote
+      # ------------------------
+      - name: Configure DVC remote
+        run: |
+          dvc remote add -f -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
+          dvc remote modify myremote region ${{ secrets.AWS_REGION }}
+
+      # ------------------------
+      # 7️⃣ Pull DVC data & cache
+      # ------------------------
+      - name: Pull data and run-cache
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          dvc pull --run-cache
+
+      # ------------------------
+      # 8️⃣ Run DVC pipeline (all stages)
+      # ------------------------
+      - name: Run DVC pipeline
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          dvc repro
+
+      # ------------------------
+      # 9️⃣ Push DVC outputs to S3
+      # ------------------------
+      - name: Push DVC outputs
+        run: |
+          dvc push
+
+      # ------------------------
+      # 🔟 Run unit, signature & performance tests
+      # ------------------------
+      - name: Run model tests
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          python -m unittest discover -s tests -p "test_*.py" -v
+
+      # ------------------------
+      # 1️⃣1️⃣ Promote model to production (if tests pass)
+      # ------------------------
+      - name: Promote model to production
+        if: success()
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          python src/promote_model.py      
