@@ -33,7 +33,10 @@ logs/
 .DS_Store
 Thumbs.db
 
-data/
+#ignore data files not dvc files
+data/*.csv
+!data/*.dvc
+
 logs/
 venv/
 *.csv
