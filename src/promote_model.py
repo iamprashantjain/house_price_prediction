@@ -50,9 +50,9 @@ def should_promote_to_production(metrics, thresholds=None):
     
     if thresholds is None:
         thresholds = {
-            'r2_score': 0.70,           # R² should be at least 0.70
-            'mae': 50.0,                 # MAE should be at most 50 lakhs
-            'accuracy_like': 60.0        # Accuracy-like metric at least 60%
+            'r2_score': 0.70,
+            'mae': 50.0,
+            'accuracy_like': 60.0
         }
     
     # Check if model meets all thresholds
@@ -92,10 +92,11 @@ def should_promote_to_production(metrics, thresholds=None):
 
 
 def get_current_production_model(client, model_name):
-    """Get current production model version"""
+    """Get current production model version using older API"""
     try:
-        # Fixed: Use double quotes for filter string
-        prod_versions = client.search_model_versions(f'name="{model_name}" and stage="Production"')
+        # Try to get all versions and filter manually (more compatible)
+        all_versions = client.search_model_versions(f"name='{model_name}'")
+        prod_versions = [v for v in all_versions if v.current_stage == "Production"]
         if prod_versions:
             return prod_versions[0].version
         return None
@@ -182,27 +183,58 @@ def promote_model():
         
         # Set up MLflow tracking URI
         dagshub_url = "https://dagshub.com"
-        repo_owner = "iamprashantjain"  # Replace with your DagsHub username
-        repo_name = "house_price_prediction"  # Replace with your repo name
+        repo_owner = "iamprashantjain"
+        repo_name = "house_price_prediction"
         
         mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
         logging.info(f"✓ MLflow tracking URI set: {dagshub_url}/{repo_owner}/{repo_name}.mlflow")
         
         client = mlflow.MlflowClient()
         
-        # Get the latest version in Staging - Fixed: Use double quotes
+        # Get the latest version in Staging - Use simpler filter first
         logging.info(f"Fetching latest Staging version for model: {model_name}")
-        staging_versions = client.search_model_versions(f'name="{model_name}" and stage="Staging"')
+        
+        try:
+            # Try the simple filter first
+            staging_versions = client.search_model_versions(f"name='{model_name}'")
+            # Filter manually for staging
+            staging_versions = [v for v in staging_versions if v.current_stage == "Staging"]
+        except:
+            # If that fails, try double quotes
+            try:
+                staging_versions = client.search_model_versions(f'name="{model_name}"')
+                staging_versions = [v for v in staging_versions if v.current_stage == "Staging"]
+            except:
+                # Last resort - get all and filter
+                logging.warning("Filter not working, attempting to get all versions...")
+                staging_versions = []
+                try:
+                    # Try to get model versions directly
+                    for i in range(1, 100):  # Try first 100 versions
+                        try:
+                            version = client.get_model_version(model_name, str(i))
+                            if version.current_stage == "Staging":
+                                staging_versions.append(version)
+                        except:
+                            break
+                except Exception as e:
+                    logging.error(f"Could not fetch versions: {e}")
+                    return False
         
         if not staging_versions:
             logging.warning(f"No model found in Staging stage for {model_name}")
             logging.info("Available stages:")
-            all_versions = client.search_model_versions(f'name="{model_name}"')
-            for version in all_versions:
-                logging.info(f"  Version {version.version}: Stage '{version.current_stage}'")
+            try:
+                all_versions = client.search_model_versions(f"name='{model_name}'")
+                for version in all_versions:
+                    logging.info(f"  Version {version.version}: Stage '{version.current_stage}'")
+            except:
+                pass
             return False
         
-        latest_version_staging = staging_versions[0].version
+        # Sort by version number and get latest
+        staging_versions.sort(key=lambda x: int(x.version))
+        latest_version_staging = staging_versions[-1].version
         logging.info(f"Latest Staging version: {latest_version_staging}")
         
         # Get performance metrics for the staging model
@@ -218,7 +250,7 @@ def promote_model():
             logging.info("You can still force promotion by setting force=True")
             return False
         
-        # Get current production model - Fixed: Use double quotes
+        # Get current production model
         current_production = get_current_production_model(client, model_name)
         if current_production:
             logging.info(f"Current Production version: {current_production}")
@@ -228,7 +260,7 @@ def promote_model():
         if not archive_production_model(client, model_name, current_production):
             logging.warning("Failed to archive production model, but continuing with promotion...")
         
-        # Promote the new model to production - Fixed formatting issue
+        # Promote the new model to production
         description = f"Promoted to Production on {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"
         
         # Safely format metrics
@@ -281,7 +313,7 @@ def force_promote_model():
         config = load_config()
         model_name = config['mlflow']['registered_model_name']
         
-        # Setup MLflow (same as above)
+        # Setup MLflow
         dagshub_token = os.getenv("DAGSHUB_PAT")
         if not dagshub_token:
             raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
@@ -297,19 +329,46 @@ def force_promote_model():
         
         client = mlflow.MlflowClient()
         
-        # Get latest staging version - Fixed: Use double quotes
-        staging_versions = client.search_model_versions(f'name="{model_name}" and stage="Staging"')
+        # Get latest staging version
+        logging.info(f"Fetching latest Staging version for model: {model_name}")
+        
+        try:
+            staging_versions = client.search_model_versions(f"name='{model_name}'")
+            staging_versions = [v for v in staging_versions if v.current_stage == "Staging"]
+        except:
+            staging_versions = []
+            for i in range(1, 100):
+                try:
+                    version = client.get_model_version(model_name, str(i))
+                    if version.current_stage == "Staging":
+                        staging_versions.append(version)
+                except:
+                    break
+        
         if not staging_versions:
             logging.error("No staging version found")
             return False
         
-        latest_version_staging = staging_versions[0].version
+        staging_versions.sort(key=lambda x: int(x.version))
+        latest_version_staging = staging_versions[-1].version
         
         # Force promotion without checks
         logging.warning(f"Force promoting version {latest_version_staging} to Production")
         
-        # Archive current production - Fixed: Use double quotes
-        prod_versions = client.search_model_versions(f'name="{model_name}" and stage="Production"')
+        # Archive current production
+        try:
+            prod_versions = client.search_model_versions(f"name='{model_name}'")
+            prod_versions = [v for v in prod_versions if v.current_stage == "Production"]
+        except:
+            prod_versions = []
+            for i in range(1, 100):
+                try:
+                    version = client.get_model_version(model_name, str(i))
+                    if version.current_stage == "Production":
+                        prod_versions.append(version)
+                except:
+                    break
+        
         for version in prod_versions:
             client.transition_model_version_stage(
                 name=model_name,
