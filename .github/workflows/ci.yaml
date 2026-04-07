@@ -1,16 +1,21 @@
 name: CI Pipeline
 
-on: push
+on: 
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   project-testing:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout code #copy code from local to github runner server
+      - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          lfs: true
 
-      - name: setup python
+      - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
@@ -23,29 +28,56 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: install dependencies
+      - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
+          pip install dvc dvc-s3
 
-      - name: run pipeline
+      - name: Configure AWS credentials for DVC (S3)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Configure DVC remote for S3
+        run: |
+          dvc remote add -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
+          dvc remote modify myremote region ${{ secrets.AWS_REGION }}
+
+      - name: Pull data from S3
+        run: dvc pull
+
+      - name: Run DVC pipeline
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
         run: |
-          dvc pull
           dvc repro
+
+      - name: Push DVC changes to S3
+        if: success()
+        run: |
           dvc push
 
       - name: Run model tests
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
         run: |
-          python -m unittest tests/test_model.py
+          python -m unittest tests/test_model.py -v
 
       - name: Promote model to production
         if: success()
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
-        run: python src/promote_model.py
+        run: |
+          python src/promote_model.py
+
+
+
+
+
+
 
       # - name: Run FASTAPI tests
       #   if: success()
