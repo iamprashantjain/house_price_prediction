@@ -94,8 +94,8 @@ def should_promote_to_production(metrics, thresholds=None):
 def get_current_production_model(client, model_name):
     """Get current production model version"""
     try:
-        # Fix for deprecated API
-        prod_versions = client.search_model_versions(f"name='{model_name}' and stage='Production'")
+        # Fixed: Use double quotes for filter string
+        prod_versions = client.search_model_versions(f'name="{model_name}" and stage="Production"')
         if prod_versions:
             return prod_versions[0].version
         return None
@@ -190,14 +190,14 @@ def promote_model():
         
         client = mlflow.MlflowClient()
         
-        # Get the latest version in Staging - FIXED deprecated API
+        # Get the latest version in Staging - Fixed: Use double quotes
         logging.info(f"Fetching latest Staging version for model: {model_name}")
-        staging_versions = client.search_model_versions(f"name='{model_name}' and stage='Staging'")
+        staging_versions = client.search_model_versions(f'name="{model_name}" and stage="Staging"')
         
         if not staging_versions:
             logging.warning(f"No model found in Staging stage for {model_name}")
             logging.info("Available stages:")
-            all_versions = client.search_model_versions(f"name='{model_name}'")
+            all_versions = client.search_model_versions(f'name="{model_name}"')
             for version in all_versions:
                 logging.info(f"  Version {version.version}: Stage '{version.current_stage}'")
             return False
@@ -218,7 +218,7 @@ def promote_model():
             logging.info("You can still force promotion by setting force=True")
             return False
         
-        # Get current production model - FIXED deprecated API
+        # Get current production model - Fixed: Use double quotes
         current_production = get_current_production_model(client, model_name)
         if current_production:
             logging.info(f"Current Production version: {current_production}")
@@ -228,7 +228,7 @@ def promote_model():
         if not archive_production_model(client, model_name, current_production):
             logging.warning("Failed to archive production model, but continuing with promotion...")
         
-        # Promote the new model to production - FIXED formatting issue
+        # Promote the new model to production - Fixed formatting issue
         description = f"Promoted to Production on {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}"
         
         # Safely format metrics
@@ -297,8 +297,8 @@ def force_promote_model():
         
         client = mlflow.MlflowClient()
         
-        # Get latest staging version - FIXED deprecated API
-        staging_versions = client.search_model_versions(f"name='{model_name}' and stage='Staging'")
+        # Get latest staging version - Fixed: Use double quotes
+        staging_versions = client.search_model_versions(f'name="{model_name}" and stage="Staging"')
         if not staging_versions:
             logging.error("No staging version found")
             return False
@@ -308,8 +308,8 @@ def force_promote_model():
         # Force promotion without checks
         logging.warning(f"Force promoting version {latest_version_staging} to Production")
         
-        # Archive current production - FIXED deprecated API
-        prod_versions = client.search_model_versions(f"name='{model_name}' and stage='Production'")
+        # Archive current production - Fixed: Use double quotes
+        prod_versions = client.search_model_versions(f'name="{model_name}" and stage="Production"')
         for version in prod_versions:
             client.transition_model_version_stage(
                 name=model_name,
