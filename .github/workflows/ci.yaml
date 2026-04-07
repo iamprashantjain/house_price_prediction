@@ -219,6 +219,11 @@ jobs:
       # ------------------------
       # 8️⃣ Run DVC pipeline (all stages)
       # ------------------------
+
+      - name: Install package
+        run: |
+          pip install -e .
+
       - name: Run DVC pipeline
         env:
           DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
