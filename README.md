@@ -12,11 +12,13 @@
 - perform experiments assesment, cleaning, EDA, transformation ---> EDA round2 ---> transformation, model building & hyperparameters (track with mlflow) in 4 phases: basic, features, algorithm, hyperparameter tuning
 - convert best overall into dvc pipeline: create components like data_ingestion, data_transformation, model_trainer, model_evalutaion, logger etc
 - upload best model on dagshub hosted mlflow model_registry in staging
+- perform model test & if success then push model to production
+- create fastapi (fetch latest model in production from mlflow model_registry and make predictions)
 
-- perform test (unit test, flask app test etc) and then promote to production in CI
 
-- create fastapi (fetch latest model from mlflow model_registry and make predictions)
+- test fast api in CI
 - dockerize this app (dockerfile)
 - create and run CI/CD pipeline on github actions and save dockerized app on ECR
 - deploy dokerized app from ECR to ECS
-- model retraining CT pipeline (manual, scheduled, event driven like new data/model_performance_drift etc)
+
+- model retraining CT pipeline using airflow (manual, scheduled, event driven like new data/model_performance_drift etc) using evidently ai
