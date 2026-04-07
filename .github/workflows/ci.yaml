@@ -43,7 +43,7 @@ jobs:
 
       - name: Configure DVC remote for S3
         run: |
-          dvc remote add -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
+          dvc remote add -f -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
           dvc remote modify myremote region ${{ secrets.AWS_REGION }}
 
       - name: Pull data from S3
