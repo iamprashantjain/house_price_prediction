@@ -48,18 +48,9 @@ jobs:
 
       - name: Pull data and run pipeline
         run: |
-          # DVC fetch se hi kaam le
           dvc fetch --all-commits
           dvc checkout
           ls -la data/
-          
-          # Agar file nahi aayi toh DVC status dekh
-          if [ ! -f data/flats.csv ]; then
-            echo "flats.csv missing, checking DVC status..."
-            dvc status data/flats.csv.dvc
-            dvc pull data/flats.csv.dvc --force
-          fi
-          
           dvc repro
 
       - name: Run DVC pipeline
