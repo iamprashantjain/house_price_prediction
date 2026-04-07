@@ -122,4 +122,4 @@ target/
 # Mypy cache
 .mypy_cache/
 
-myenv
+myenvdata/*.csv 
