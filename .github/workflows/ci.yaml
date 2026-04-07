@@ -48,10 +48,8 @@ jobs:
 
       - name: Pull data and run pipeline
         run: |
-          dvc fetch --all-commits
-          dvc checkout
-          ls -la data/
-          dvc repro
+          dvc pull --run-cache
+          
 
       - name: Run DVC pipeline
         env:
