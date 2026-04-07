@@ -48,10 +48,8 @@ jobs:
 
       - name: Pull data from S3
         run: |
-          dvc pull
-          dvc pull data/flats.csv.dvc
-          dvc pull data/houses.csv.dvc
-          dvc checkout data/
+          git add -f data/*.dvc 2>/dev/null || true
+          dvc pull --force
           ls -la data/
 
       - name: Run DVC pipeline
