@@ -177,11 +177,29 @@
                     + docker run -d -p 8080:8000 -e DAGSHUB_PAT="your_actual_token_here" --name house-price-api 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest
                     + Add security rules: add http traffic
 
-        + Add above docker image push to ECR & Deployment on EC2 in CI workflow
-        + 
+        + Add above docker image build, push to ECR & deployment on EC2 in CI workflow
+            - Create EC2 machine and run below commands:
+                - sudo apt-get update
+                - sudo apt-get install -y docker.io
+                - sudo systemctl start docker
+                - sudo systemctl enable docker
+                - sudo apt-get update
+                - sudo apt-get install -y unzip curl
+                - curl "https://awscli.amazonaws.com/awscli-exe-linux_x86_64.zip" -o "awscliv2.zip"
+                - unzip awscliv2.zip
+                - sudo ./aws/install
+                - sudo usermod -aG docker ubuntu- 
+                - exit
+
+            - add github secrets to deploy ec2
+            - open new terminal and check `docker --version`
+            - update CI with `deploy to ec2` steps
+            - commit & push 
+            - add security group
 
 
         + **Deployment startegy #2**
+        
 
 
 
