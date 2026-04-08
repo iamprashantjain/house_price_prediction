@@ -117,11 +117,9 @@ jobs:
       - name: Tag Docker image
         if: success()
         run: |
-          docker tag house-price-api:latest 739275446561.dkr.ecr.ap-south-1.amazonaws.com/house-price-api:latest
+          docker tag house-price-api:latest 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest
 
       - name: Push Docker image to AWS ECR
         if: success()
         run: |
-          docker push 739275446561.dkr.ecr.ap-south-1.amazonaws.com/house-price-api:latest
-
-      
+          docker push 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest
