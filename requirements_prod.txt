@@ -1,0 +1,12 @@
+pandas
+numpy
+scikit-learn
+pyyaml
+mlflow==2.15.0
+fastapi
+uvicorn[standard]
+pydantic
+joblib
+uvicorn[standard]
+python-dotenv
+requests
