@@ -11,7 +11,7 @@ data:
 
 
 data_split:
-  test_size: 0.25
+  test_size: 0.35
   random_state: 42
   shuffle: true
 

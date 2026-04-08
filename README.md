@@ -1,3 +1,5 @@
+## Project Setup
+
 - Create a project folder 
 - git init
 - dvc init
@@ -19,6 +21,8 @@
 - Upload best model on dagshub hosted mlflow model_registry in staging
 - Perform model test & if success then push model to production
 - Create fastapi (fetch latest model in production from mlflow model_registry and make predictions)
+
+## CICD
 
 - Create CI/CD pipeline using github actions and docker
     - **CI (continuous integration)** is a software development practice where developers regularly update the code with new changes and merge thier code changes into github or any other shared centralized repository usually multiple times a day. each merge triggers automation build and testing to detect and fix any issues. This helps to ensure that software remains in deployable stage everytime. 
@@ -154,7 +158,7 @@
                     "rate_per_sqft": 3500
                     }
         + Push docker image to AWS ECR (use "view push commands")
-        + **Deployment startegy #1**
+        + **Deployment startegy #1 --> EC2**
             - `RUN this docker image on EC2`
             - setup EC2
             - connect to terminal from aws
@@ -198,15 +202,83 @@
             - add security group
 
 
-        + **Deployment startegy #2**
+        + **Additional Tips**
+            - reduce the size of the docker image using `multi-stage` build to reduce the cost
+            - reduce the size of the docker image using `multi-layers` basically write compact dockerfile
+            - install python libraries with no-cache-dir to avoid caching unneccasry files
+            - remove unneccasry files after build in dockerfile
+
+
+        + **Problem with EC2 deployment (single server and single container deployment)**
+            - Scalability: we can do 2 type of scaling:
+                1. vertical scaling: upgrade hardware (increasing ram, hdd etc)
+                2. horizontal scaling: additional servers to distribute load --> Most Preffered in ML
+                
+            - We can spin-up 2 ec2 servers manually but it will be impossible in case of scaling like spinning 100s of servers
+            
+            - Traffic Routing: lets say we have 100s of servers running, who will decide when to route      traffic and where?
+
+            - Rigid setup: Doesn't care about the traffic, server count remains same. we have to manually stop and start the server
+
+            - Manual Update in all servers incase we have to update with new docker image
+
+            - Potential downtime when updating manaully
+
+            - No health check whether servers are active or died
+
+            - No centralized logging and monitoring -- we'll have to go to each aws control panel
+
+            - Security management manually independentally
+
+            - Lack of mechanism to figure out which server died & spinup new server against that
+
+            - Complexity in CI/CD pipeline
+
         
+            + **Solution**
+                - `Manual Server starting`: Spinup new server quickly using pre-defined templates : `AWS AMIs`
+                - `Traffic routing`: use `load balancer` to route traffic
+                - `Rigid Setup`: Use ASG service (auto scaling group) which will auto spin or stop new servers as and when required based on threshold we have setup, It will also avoid `potential downtime issue, health checks, monitoring, security management`
+            
+            + **Remaining Issues**
+            + when we have a new docker image, how we can update and deploy that to all servers
+            + what startegy we can use to deploy
+            + how can we can rollback to previous working version if something goes wrong
+            + how we can integrate LB, ASG etc into CI/CD
 
+            + **Solution**
+                - code changes
+                - build docker images
+                - push to ecr
 
+                - `All above can be handled by CI as of now`
+                - Manual task
+                - Edit launch template
+                - Use latest template in ASG which will have recent changes
+                - Similarly we can roll back -- just change the template
+                - **Although, Downtime is still there since we are manually stopiing servers**
 
+            + **Deployment startegy #2 --> ECS**
+                - We can use **AWS CodeDeploy**:
+                    1. Readymade Deployment startegy: BlueGreen or Rolling
+                    2. Automated rollbacks
+                    3. More control over Deployment
+                    4. Smooth integration with CICD
 
-        + Create and run CI/CD pipeline on github actions with triggers and push dockerized app on ECR
-        + Deploy dokerized app from ECR to ECS 
+                - **Steps**
+                    0. create 2 IAM user roles
+                    1. install codedeploy runner on EC2 machines
+                    2. create new launch template
+                    3. create new ASG
+                    4. deploy ECR docker image on ASG using CodeDeploy service
+                        - we create a application in CodeDeploy service
+                        - we create a deployment group in this application
+                        - connect this deployment group with ASG
+                    5. create new deployment which will have instructions of what to do at the time of deployment like docker istall, awscli install, pull image from ecr, run etc
+                    6. All these instructions will be under appspec.yaml
+                    7. Run this deployment which will automatiaclly execute instructions on ASG servers
 
+<!-- 16:36 sess 35  -->
 
 - Model retraining CT pipeline using airflow (manual, scheduled, event driven like new data/model_performance_drift etc) using evidently ai
 

@@ -124,6 +124,32 @@ jobs:
         run: |
           docker push 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest
 
+
+      - name: Delete all previous images except current
+        if: success()
+        run: |
+          # Get current image digest
+          CURRENT_DIGEST=$(docker inspect 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest --format='{{.Id}}')
+          
+          # Get all images and delete them
+          ALL_IMAGES=$(aws ecr list-images \
+            --repository-name prashant-ecr \
+            --query 'imageIds[*]' \
+            --output json \
+            --region ap-south-1)
+          
+          if [ "$ALL_IMAGES" != "[]" ] && [ "$ALL_IMAGES" != "" ]; then
+            aws ecr batch-delete-image \
+              --repository-name prashant-ecr \
+              --image-ids "$ALL_IMAGES" \
+              --region ap-south-1 || true
+            echo "Deleted all previous images"
+          fi
+
+
+
+
+
       # - name: Deploy to EC2
       #   if: success()
       #   uses: appleboy/ssh-action@v0.1.5
