@@ -7,6 +7,10 @@
 - Run template.py to create folder and files
 - Create setup.py and pip install -e .
 - Setup s3 buket & aws ecr for docker app
+    - create iam user
+    - attach policies
+    - setup aws: pip install awscli && aws configure (access key and security key)
+
 - dvc remote add -d myremote s3://my-mlops-project-demo/house_price_prediction
 - dvc config core.autostage true ---> auto pull everytime    
 - Setup dagshub and host mlflow
@@ -149,6 +153,38 @@
                     "amenities_rating": 2.5,
                     "rate_per_sqft": 3500
                     }
+        + Push docker image to AWS ECR (use "view push commands")
+        + **Deployment startegy #1**
+            - `RUN this docker image on EC2`
+            - setup EC2
+            - connect to terminal from aws
+            - run below commands:
+                1. sudo apt-get update
+                2. sudo apt-get install -y docker.io
+                3. sudo systemctl start docker
+                4. sudo systemctl enable docker
+                5. sudo apt-get update
+                6. sudo apt-get install -y unzip curl
+                7. curl "https://awscli.amazonaws.com/awscli-exe-linux_x86_64.zip" -o "awscliv2.zip"
+                8. unzip awscliv2.zip
+                9. sudo ./aws/install
+                10. sudo usermod -aG docker ubuntu
+                11. aws configure
+                12. run aws push commands: 
+                    + aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 739275446561.dkr.ecr.ap-south-1.amazonaws.com
+                    + docker pull 739275446561.dkr.ecr.ap-south-1.amazonaws.com/house-price-api:latest
+                    + docker run -d -p 
+                    + docker run -d -p 8080:8000 -e DAGSHUB_PAT="your_actual_token_here" --name house-price-api 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest
+                    + Add security rules: add http traffic
+
+        + Add above docker image push to ECR & Deployment on EC2 in CI workflow
+        + 
+
+
+        + **Deployment startegy #2**
+
+
+
 
         + Create and run CI/CD pipeline on github actions with triggers and push dockerized app on ECR
         + Deploy dokerized app from ECR to ECS 
