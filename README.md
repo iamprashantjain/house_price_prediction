@@ -276,8 +276,14 @@
                     5. create new deployment which will have instructions of what to do at the time of deployment like docker istall, awscli install, pull image from ecr, run etc
                     6. All these instructions will be under appspec.yaml
                     7. Run this deployment which will automatiaclly execute instructions on ASG servers
+                    8. If stuck at allow traffic : It must be bcoz target group set to port 80 whereas it should be at port 8080
+                    9. Target group PORT = Docker run's HOST PORT
+                    10. Check : http://3.108.58.225:8080/docs & http://my-elb-1730727805.ap-south-1.elb.amazonaws.com/docs - both should work -- means load balancer is working perfectly !!
+                    11. check aws_deployed_app_screenshot.pdf
 
-<!-- 16:36 sess 35  -->
+                    ![alt text](image-1.png)
+
+                    
 
 - Model retraining CT pipeline using airflow (manual, scheduled, event driven like new data/model_performance_drift etc) using evidently ai
 
