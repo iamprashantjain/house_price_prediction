@@ -177,7 +177,6 @@
                 12. run aws push commands: 
                     + aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 739275446561.dkr.ecr.ap-south-1.amazonaws.com
                     + docker pull 739275446561.dkr.ecr.ap-south-1.amazonaws.com/house-price-api:latest
-                    + docker run -d -p 
                     + docker run -d -p 8080:8000 -e DAGSHUB_PAT="your_actual_token_here" --name house-price-api 739275446561.dkr.ecr.ap-south-1.amazonaws.com/prashant-ecr:latest
                     + Add security rules: add http traffic
 
@@ -268,7 +267,7 @@
                 - **Steps**
                     0. create 2 IAM user roles
                     1. install codedeploy runner on EC2 machines
-                    2. create new launch template
+                    2. create new launch template (userdata.txt)
                     3. create new ASG
                     4. deploy ECR docker image on ASG using CodeDeploy service
                         - we create a application in CodeDeploy service
