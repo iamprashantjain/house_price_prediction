@@ -289,3 +289,361 @@
 
 
 git add . && git commit -m "fastapi app test added with fastapi server in background" && git push origin main
+
+
+
+
+- **Instead of deploying app to EC2 using code-deploy --> deploy on AWS ECS**
+
+To modify your GitHub Actions workflow to deploy to ECS instead:
+
+## Updated GitHub Actions Workflow for ECS Deployment
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  mlops-pipeline:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt dvc[s3]
+          pip install -e .
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Configure DVC remote
+        run: |
+          dvc remote add -f -d myremote s3://${{ secrets.S3_BUCKET_NAME }}/house_price_prediction
+          dvc remote modify myremote region ${{ secrets.AWS_REGION }}
+
+      - name: Pull DVC data
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          dvc pull --force
+
+      - name: Run DVC pipeline
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          dvc repro
+
+      - name: Push DVC outputs to S3
+        run: dvc push
+
+      - name: Run all tests
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Promote model to production
+        if: success()
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          python src/promote_model.py
+
+      - name: Run test_app.py with FastAPI server
+        env:
+          DAGSHUB_PAT: ${{ secrets.DAGSHUB_PAT }}
+        run: |
+          export MLFLOW_TRACKING_USERNAME=${DAGSHUB_PAT}
+          export MLFLOW_TRACKING_PASSWORD=${DAGSHUB_PAT}
+          
+          # Start FastAPI server in background
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          
+          # Wait for server to start
+          sleep 10
+          
+          # Run test_app.py (which will test the running API)
+          python tests/test_app.py -v
+          
+          # Kill server
+          kill $(lsof -t -i:8000) || true
+
+      - name: Login to AWS ECR
+        if: success()
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      - name: Build Docker image
+        if: success()
+        run: |
+          docker build -t house-price-api:latest .
+
+      - name: Tag Docker image
+        if: success()
+        run: |
+          docker tag house-price-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+
+      - name: Push Docker image to AWS ECR
+        if: success()
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+
+      # NEW: Deploy to ECS
+      - name: Deploy to ECS
+        if: success()
+        run: |
+          # Force new deployment with the latest image
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --service ${{ secrets.ECS_SERVICE_NAME }} \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
+          
+          echo "Waiting for deployment to stabilize..."
+          sleep 30
+          
+          # Check service status
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --services ${{ secrets.ECS_SERVICE_NAME }} \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'services[0].status' \
+            --output text)
+          
+          if [ "$SERVICE_STATUS" == "ACTIVE" ]; then
+            echo "✅ ECS service updated successfully!"
+            
+            # Get task ARN
+            TASK_ARN=$(aws ecs list-tasks \
+              --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+              --service-name ${{ secrets.ECS_SERVICE_NAME }} \
+              --region ${{ secrets.AWS_REGION }} \
+              --query 'taskArns[0]' \
+              --output text)
+            
+            # Get task status
+            TASK_STATUS=$(aws ecs describe-tasks \
+              --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+              --tasks $TASK_ARN \
+              --region ${{ secrets.AWS_REGION }} \
+              --query 'tasks[0].lastStatus' \
+              --output text)
+            
+            echo "Task status: $TASK_STATUS"
+            
+            # Get service endpoint (if using ALB)
+            if [ ! -z "${{ secrets.ALB_DNS_NAME }}" ]; then
+              echo "🌐 Service available at: http://${{ secrets.ALB_DNS_NAME }}"
+            fi
+          else
+            echo "❌ Service update failed!"
+            exit 1
+          fi
+
+      # Optional: Run smoke tests against deployed ECS service
+      - name: Smoke test ECS deployment
+        if: success()
+        run: |
+          if [ ! -z "${{ secrets.ALB_DNS_NAME }}" ]; then
+            echo "Running smoke tests against ECS deployment..."
+            sleep 30  # Give service time to fully start
+            
+            # Test health endpoint
+            HEALTH_CHECK=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.ALB_DNS_NAME }}/health)
+            if [ "$HEALTH_CHECK" == "200" ]; then
+              echo "✅ Health check passed!"
+            else
+              echo "❌ Health check failed with status: $HEALTH_CHECK"
+              exit 1
+            fi
+            
+            # Test prediction endpoint with sample data
+            PREDICTION=$(curl -s -X POST http://${{ secrets.ALB_DNS_NAME }}/predict \
+              -H "Content-Type: application/json" \
+              -d '{"features": [3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}')
+            
+            if [[ $PREDICTION == *"prediction"* ]]; then
+              echo "✅ Prediction endpoint working!"
+              echo "Response: $PREDICTION"
+            else
+              echo "❌ Prediction endpoint failed!"
+              exit 1
+            fi
+          else
+            echo "Skipping smoke tests - no ALB DNS name provided"
+          fi
+```
+
+## Required Infrastructure Setup (One-time)
+
+Before this workflow will work, you need to create the ECS infrastructure. Here's a Terraform or AWS CLI approach:
+
+### Option 1: AWS CLI Commands to Create ECS Infrastructure
+
+```bash
+# 1. Create ECS Cluster
+aws ecs create-cluster --cluster-name house-price-cluster
+
+# 2. Create Task Definition (save as task-def.json)
+cat > task-def.json << EOF
+{
+  "family": "house-price-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "house-price-api",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY_NAME}:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "DAGSHUB_PAT",
+          "value": "${DAGSHUB_PAT}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/house-price-api",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
+EOF
+
+# Register task definition
+aws ecs register-task-definition --cli-input-json file://task-def.json
+
+# 3. Create ECS Service (with public IP for testing)
+aws ecs create-service \
+  --cluster house-price-cluster \
+  --service-name house-price-service \
+  --task-definition house-price-api \
+  --launch-type FARGATE \
+  --desired-count 1 \
+  --network-configuration "awsvpcConfiguration={subnets=[subnet-xxxxx],securityGroups=[sg-xxxxx],assignPublicIp=ENABLED}" \
+  --region ${AWS_REGION}
+```
+
+### Option 2: Create ECS with Load Balancer (Production Ready)
+
+For production, you'll want an Application Load Balancer:
+
+```bash
+# Create load balancer
+aws elbv2 create-load-balancer \
+  --name house-price-alb \
+  --subnets subnet-xxxxx subnet-yyyyy \
+  --security-groups sg-xxxxx \
+  --scheme internet-facing
+
+# Create target group
+aws elbv2 create-target-group \
+  --name house-price-tg \
+  --protocol HTTP \
+  --port 8000 \
+  --vpc-id vpc-xxxxx \
+  --target-type ip \
+  --health-check-path /health
+
+# Create listener
+aws elbv2 create-listener \
+  --load-balancer-arn ${ALB_ARN} \
+  --protocol HTTP \
+  --port 80 \
+  --default-actions Type=forward,TargetGroupArn=${TG_ARN}
+
+# Update service to use load balancer
+aws ecs update-service \
+  --cluster house-price-cluster \
+  --service house-price-service \
+  --load-balancers "targetGroupArn=${TG_ARN},containerName=house-price-api,containerPort=8000"
+```
+
+## GitHub Secrets to Add
+
+Add these secrets to your GitHub repository:
+
+| Secret Name | Description |
+|-------------|-------------|
+| `AWS_ACCESS_KEY_ID` | Your AWS access key |
+| `AWS_SECRET_ACCESS_KEY` | Your AWS secret key |
+| `AWS_REGION` | Your AWS region (e.g., ap-south-1) |
+| `AWS_ACCOUNT_ID` | Your AWS account ID (739275446561) |
+| `ECR_REPOSITORY_NAME` | Your ECR repo name (prashant-ecr) |
+| `ECS_CLUSTER_NAME` | Your ECS cluster name (e.g., house-price-cluster) |
+| `ECS_SERVICE_NAME` | Your ECS service name (e.g., house-price-service) |
+| `ALB_DNS_NAME` | (Optional) Your ALB DNS name for testing |
+| `DAGSHUB_PAT` | Your DagsHub PAT |
+| `S3_BUCKET_NAME` | Your S3 bucket for DVC |
+
+## Advantages of ECS over EC2
+
+1. **No server management** - AWS handles the underlying EC2 instances
+2. **Auto-healing** - Failed containers are automatically restarted
+3. **Rolling updates** - Zero-downtime deployments
+4. **Service discovery** - Built-in DNS for inter-service communication
+5. **Auto-scaling** - Scale based on CPU/memory or custom metrics
+6. **Better logging** - Native CloudWatch integration
+7. **Resource optimization** - Right-size containers without managing instances
+
+## Comparison Summary
+
+| Aspect | EC2 (Your commented code) | ECS (New approach) |
+|--------|--------------------------|-------------------|
+| **Server management** | Manual (SSH, updates) | Automatic |
+| **Deployment** | SSH + docker commands | `update-service` API call |
+| **Scaling** | Manual | Automatic |
+| **Rollback** | Manual re-deploy | One command to revert |
+| **Logging** | Need to setup | Built-in CloudWatch |
+| **High availability** | Single instance | Multiple AZs by default |
+| **Cost** | Pay for full EC2 | Pay only for resources used (Fargate) |
+
+This ECS deployment will give you a production-grade setup with minimal maintenance overhead compared to managing EC2 instances manually or via EC2 & CodeDeploy
